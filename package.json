@@ -4,9 +4,10 @@
   "main": "src/index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node src/index.js",
+    "clean": "rimraf node_modules",
     "lint": "eslint \"{src}/**/*.js\"",
-    "lint:fix": "eslint --fix \"{src}/**/*.js\""
+    "lint:fix": "eslint --fix \"{src}/**/*.js\"",
+    "start": "node src/index.js"
   },
   "dependencies": {
     "bluetooth-hci-socket": "^0.5.1",
@@ -15,6 +16,7 @@
   "devDependencies": {
     "eslint": "^4.0.0",
     "eslint-plugin-prettier": "^2.1.1",
-    "prettier": "^1.4.4"
+    "prettier": "^1.4.4",
+    "rimraf": "^2.6.2"
   }
 }
