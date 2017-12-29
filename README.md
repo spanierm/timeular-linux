@@ -29,3 +29,9 @@ docker-compose run --rm npm install
 docker-compose run --rm npm start
 ```
 
+
+## Information about Bluetooth Low Energy
+
+GATT Services: [https://www.bluetooth.com/specifications/gatt/services](https://www.bluetooth.com/specifications/gatt/services)
+
+GATT Characteristics: [https://www.bluetooth.com/specifications/gatt/characteristics](https://www.bluetooth.com/specifications/gatt/characteristics)
