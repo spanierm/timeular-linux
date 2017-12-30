@@ -11,10 +11,10 @@
       }
     }
   },
-  "POSITION": {
+  "ORIENTATION": {
     "uuid": "c7e70010c84711e681758c89a55d403c",
     "characteristics": {
-      "RAW_GYRO_ACCELEROMETER": {
+      "GYRO_ACCELEROMETER": {
         "uuid": "c7e70011c84711e681758c89a55d403c",
         "types": [
           "read"

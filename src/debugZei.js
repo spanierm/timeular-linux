@@ -26,7 +26,7 @@ noble.on("discover", peripheral => {
           readBatteryLevel(gattServices, characteristics);
 
           const topSideCharacteristic = characteristics.find(
-            characteristic => characteristic.uuid === zeiServices.POSITION.characteristics.TOP_SIDE.uuid
+            characteristic => characteristic.uuid === zeiServices.ORIENTATION.characteristics.TOP_SIDE.uuid
           );
           debugCharacteristic("top position", topSideCharacteristic);
 
