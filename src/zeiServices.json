@@ -1,0 +1,66 @@
+{
+  "a": {
+    "uuid": "c7e70000c84711e681758c89a55d403c",
+    "characteristics": {
+      "a": {
+        "uuid": "c7e70001c84711e681758c89a55d403c",
+        "types": [
+          "write",
+          "notify"
+        ]
+      }
+    }
+  },
+  "POSITION": {
+    "uuid": "c7e70010c84711e681758c89a55d403c",
+    "characteristics": {
+      "RAW_GYRO_ACCELEROMETER": {
+        "uuid": "c7e70011c84711e681758c89a55d403c",
+        "types": [
+          "read"
+        ]
+      },
+      "TOP_SIDE": {
+        "uuid": "c7e70012c84711e681758c89a55d403c",
+        "types": [
+          "read",
+          "indicate"
+        ]
+      }
+    }
+  },
+  "BUTTON_PANEL": {
+    "uuid": "c7e70020c84711e681758c89a55d403c",
+    "characteristics": {
+      "PUSH_BUTTON": {
+        "uuid": "c7e70021c84711e681758c89a55d403c",
+        "types": [
+          "indicate"
+        ]
+      },
+      "LED_COLOR": {
+        "uuid": "c7e70022c84711e681758c89a55d403c",
+        "types": [
+          "write"
+        ]
+      }
+    }
+  },
+  "d": {
+    "uuid": "c7e70040c84711e681758c89a55d403c",
+    "characteristics": {
+      "a": {
+        "uuid": "c7e70041c84711e681758c89a55d403c",
+        "types": [
+          "write"
+        ]
+      },
+      "b": {
+        "uuid": "c7e70042c84711e681758c89a55d403c",
+        "types": [
+          "write"
+        ]
+      }
+    }
+  }
+}

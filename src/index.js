@@ -1,4 +1,3 @@
-const debugZei = require("./debugZei");
 const noble = require("noble");
 const Zei = require("./zei");
 
@@ -17,9 +16,7 @@ noble.on("discover", peripheral => {
     noble.stopScanning(() => {
       peripheral.connect(error => {
         peripheral.discoverAllServicesAndCharacteristics((error, services, characteristics) => {
-          // debugZei.logAllServicesWithCharacteristics(services);
-          const zeiServices = debugZei.getAllServicesWithCharacterstics(services);
-          console.log(zeiServices);
+          // to do
         });
       });
     });

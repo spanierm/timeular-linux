@@ -2,39 +2,106 @@
   "GENERIC_ACCESS": {
     "uuid": "1800",
     "characteristics": {
-      "DEVICE_NAME": "2a00",
-      "APPEARANCE": "2a01",
-      "PERIPHERAL_PREFERRED_CONNECTION_PARAMETERS": "2a04"
+      "DEVICE_NAME": {
+        "uuid": "2a00",
+        "types": [
+          "read",
+          "write"
+        ]
+      },
+      "APPEARANCE": {
+        "uuid": "2a01",
+        "types": [
+          "read"
+        ]
+      },
+      "PERIPHERAL_PREFERRED_CONNECTION_PARAMETERS": {
+        "uuid": "2a04",
+        "types": [
+          "read"
+        ]
+      }
     }
   },
   "GENERIC_ATTRIBUTE": {
     "uuid": "1801",
     "characteristics": {
     }
-  }
+  },
   "TX_POWER": {
     "uuid": "1804",
     "characteristics": {
-      "TX_POWER_LEVEL": "2a07"
+      "TX_POWER_LEVEL": {
+        "uuid": "2a07",
+        "types": [
+          "read"
+        ]
+      }
     }
   },
   "DEVICE_INFORMATION": {
     "uuid": "180a",
     "characteristics": {
-      "SYSTEM_ID": "2a23",
-      "MODEL_NUMBER_STRING": "2a24",
-      "SERIAL_NUMBER_STRING": "2a25",
-      "FIRMWARE_REVISION_STRING": "2a26",
-      "HARDWARE_REVISION_STRING": "2a27",
-      "SOFTWARE_REVISION_STRING": "2a28",
-      "MANUFACTURER_NAME_STRING": "2a29",
-      "PNP_ID": "2a50"
+      "SYSTEM_ID": {
+        "uuid": "2a23",
+        "types": [
+          "read"
+        ]
+      },
+      "MODEL_NUMBER_STRING": {
+        "uuid": "2a24",
+        "types": [
+          "read"
+        ]
+      },
+      "SERIAL_NUMBER_STRING": {
+        "uuid": "2a25",
+        "types": [
+          "read"
+        ]
+      },
+      "FIRMWARE_REVISION_STRING": {
+        "uuid": "2a26",
+        "types": [
+          "read"
+        ]
+      },
+      "HARDWARE_REVISION_STRING": {
+        "uuid": "2a27",
+        "types": [
+          "read"
+        ]
+      },
+      "SOFTWARE_REVISION_STRING": {
+        "uuid": "2a28",
+        "types": [
+          "read"
+        ]
+      },
+      "MANUFACTURER_NAME_STRING": {
+        "uuid": "2a29",
+        "types": [
+          "read"
+        ]
+      },
+      "PNP_ID": {
+        "uuid": "2a50",
+        "types": [
+          "read"
+        ]
+      }
     }
   },
   "BATTERY_SERVICE": {
     "uuid": "180f",
     "characteristics": {
-      "BATTERY_LEVEL": "2a19"
+      "BATTERY_LEVEL": {
+        "uuid": "2a19",
+        "types": [
+          "read",
+          "notify"
+        ]
+      }
     }
   }
 }

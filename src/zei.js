@@ -26,9 +26,11 @@ const POSITION = {
   TIP_DOWN: 9
 };
 
+// http://support.timeular.com/english-eng/first-steps/zei%C2%BA-and-its-hardware-functions
 const PUSH_TYPE = {
-  SHORT: 0,
-  LONG: 1
+  SHORT: 0, // 1 second
+  LONG: 1 // 3 seconds
+  // 8 seconds for a reset
 };
 
 const LED_COLOR = {
