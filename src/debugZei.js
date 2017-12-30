@@ -23,12 +23,32 @@ noble.on("discover", peripheral => {
           const gattServices = require("./gattServices");
           const zeiServices = require("./zeiServices");
 
-          // ledBlinkRotatingColors(characteristics);
+          readBatteryLevel(gattServices, characteristics);
 
-          const characteristicToDebug = characteristics.find(
-            characteristic => characteristic.uuid === zeiServices.d.characteristics.a.uuid
+          const topSideCharacteristic = characteristics.find(
+            characteristic => characteristic.uuid === zeiServices.POSITION.characteristics.TOP_SIDE.uuid
           );
-          debugCharacteristic("d-a", characteristicToDebug);
+          debugCharacteristic("top position", topSideCharacteristic);
+
+
+          // const daCharacteristic = characteristics.find(
+          //   characteristic => characteristic.uuid === zeiServices.d.characteristics.a.uuid
+          // );
+          // const dbCharacteristic = characteristics.find(
+          //   characteristic => characteristic.uuid === zeiServices.d.characteristics.b.uuid
+          // );
+          // ledBlinkRotatingColors(zeiServices, characteristics);
+          // await sleep(1000 * 5);
+
+          // LED on for 3 seconds
+          // - if written every second, the LED is on all time
+          // - if written less often, e.g. every 2nd second, the LED is off after 3 seconds
+          // value >0 activates the LED
+          // repeatedlyWriteValueToCharacteristic("d-a", daCharacteristic, [1], 1000);
+
+          // LED blinking
+          // repeatedlyWriteValueToCharacteristic("d-b", dbCharacteristic, [2], 1000);
+
 
         });
       });
@@ -48,31 +68,56 @@ const debugCharacteristic = async (name, characteristicToDebug) => {
   });
 
   characteristicToDebug.subscribe();
-
-  // characteristicToDebug.once("write", () => {
-  //   console.log(`${name} - written`)
-  // });
-
-  // characteristicToDebug.once("notify", state => {
-  //   console.log(`${name} - : state: ${state}`)
-  // });
 };
 
-const ledBlinkRotatingColors = async (characteristics) => {
+const repeatedlyWriteValueToCharacteristic = async (name, characteristic, values, intervallInMilliseconds) => {
+  while (true) {
+    characteristic.write(createWriteBuffer(values));
+
+    await sleep(intervallInMilliseconds)
+  }
+};
+
+const repeatedlyReadValueOfCharacteristic = async (name, characteristic, intervallInMilliseconds) => {
+  while (true) {
+    characteristic.read((error, data) => {
+      for (let i = 0; i < data.length; i++) {
+        console.log(`${name} - readUInt(${i}): ${data.readUInt8(i)}`)
+      }
+    });
+
+    await sleep(intervallInMilliseconds)
+  }
+};
+
+const ledBlinkRotatingColors = async (zeiServices, characteristics) => {
   const ledCharacteristic = characteristics.find(
     characteristic => characteristic.uuid === zeiServices.BUTTON_PANEL.characteristics.LED_COLOR.uuid
   );
 
-  let color = 0;
+  let color = 1;
   while (true) {
-    await sleep(1000);
     console.log(`color: ${color}`);
-    const buffer = new Buffer(1);
-    buffer.writeUInt8(color);
-    ledCharacteristic.write(buffer);
+    ledCharacteristic.write(createWriteBuffer([color]));
 
     color = ++color % 3;
+    await sleep(1000);
   }
+};
+
+const readBatteryLevel = (gattServices, characteristics) => {
+  const batteryLevelCharacteristic = characteristics.find(
+    characteristic => characteristic.uuid === gattServices.BATTERY_SERVICE.characteristics.BATTERY_LEVEL.uuid
+  );
+  batteryLevelCharacteristic.read((error, data) => {
+    console.log(`current battery level is ${data.readUInt8(0)}%`);
+  });
+};
+
+const createWriteBuffer = (values) => {
+  const buffer = new Buffer(values.length);
+  values.forEach(value => buffer.writeUInt8(value));
+  return buffer
 };
 
 const logAllServicesWithCharacteristics = services => {
