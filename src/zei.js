@@ -1,55 +1,60 @@
-const isZEIPeripheral = peripheral =>
-  peripheral.advertisement.localName === "Timeular ZEI";
+const noble = require("noble");
+const zeiServices = require("./zeiServices");
 
-// TODO Convert UUID16 to correct value: see https://stackoverflow.com/a/36212021
-const SERVICE = {
-  Orientation: "c7e70010c84711e681758c89a55d403c" //"0x0010"
+const RELEVANT_SERVICES = [zeiServices.ORIENTATION.uuid];
+const TOP_SIDE_CHARACTERISTIC_UUID = zeiServices.ORIENTATION.characteristics.TOP_SIDE.uuid;
+const RELEVANT_CHARACTERISTICS = [TOP_SIDE_CHARACTERISTIC_UUID];
+
+const subscribeToCharacteristics = (orientationChangeCallback) => {
+  _startScanning();
+  _registerToZeiEvents(orientationChangeCallback);
 };
 
-const CHARACTERISTIC = {
-  Accelerometer: "c7e70011c84711e681758c89a55d403c", //"0x0011",
-  Position: "c7e70012c84711e681758c89a55d403c", //"0x0012",
-  PushButton: "c7e70021c84711e681758c89a55d403c", //"0x0021",
-  LED: "c7e70022c84711e681758c89a55d403c" //"0x0022"
+const _startScanning = () => {
+  noble.on("stateChange", state => {
+    if (state === "poweredOn") {
+      console.log("Starting to scan.");
+      noble.startScanning(RELEVANT_SERVICES);
+    }
+  });
 };
 
-const POSITION = {
-  TIP_UP: 0,
-  DOWN_NORTH: 1,
-  DOWN_WEST: 2,
-  DOWN_SOUTH: 3,
-  DOWN_EAST: 4,
-  UP_NORTH: 5,
-  UP_WEST: 6,
-  UP_SOUTH: 7,
-  UP_EAST: 8,
-  TIP_DOWN: 9
+const _registerToZeiEvents = (orientationChangeEventCallback) => {
+  noble.on("discover", peripheral => {
+    if (_isZeiPeripheral(peripheral)) {
+      console.log("Found a Timeular Zei peripheral!");
+      _stopScanningAndConnect(peripheral, (characteristics) => {
+        _subscribeToNotifyEvent(characteristics, TOP_SIDE_CHARACTERISTIC_UUID, orientationChangeEventCallback)
+      });
+    }
+  });
 };
 
-// http://support.timeular.com/english-eng/first-steps/zei%C2%BA-and-its-hardware-functions
-const PUSH_TYPE = {
-  SHORT: 0, // 1 second
-  LONG: 1 // 3 seconds
-  // 8 seconds for a reset
+const _isZeiPeripheral = (peripheral) => {
+  return peripheral.advertisement.localName === "Timeular ZEI";
 };
 
-const LED_COLOR = {
-  RED: 0,
-  GREEN: 1,
-  BLUE: 2
+const _stopScanningAndConnect = (peripheral, connectionEstablishedCallback) => {
+  console.log("Stopping to scan.");
+  noble.stopScanning(() => {
+    console.log("Connecting to the Timeular Zei peripheral.");
+    peripheral.connect(error => {
+      peripheral.discoverSomeServicesAndCharacteristics(RELEVANT_SERVICES, RELEVANT_CHARACTERISTICS, (error, services, characteristics) => {
+        connectionEstablishedCallback(characteristics);
+      });
+    });
+  });
 };
 
-const DURATION = {
-  SHORT: 0,
-  LONG: 1
+const _subscribeToNotifyEvent = (characteristics, uuid, eventCallback) => {
+  console.log(`Subscribing to the notify characteristic with the uuid '${uuid}.'`);
+  const notifyCharacteristic = characteristics.find(
+    characteristic => characteristic.uuid === uuid
+  );
+  notifyCharacteristic.on("data", eventCallback);
+  notifyCharacteristic.subscribe();
 };
 
 module.exports = {
-  isZEIPeripheral,
-  SERVICE,
-  CHARACTERISTIC,
-  POSITION,
-  PUSH_TYPE,
-  LED_COLOR,
-  DURATION
+  subscribeToCharacteristics
 };
