@@ -1,5 +1,5 @@
-const fs = require("fs");
-const moment = require("moment");
+const fs = require('fs')
+const moment = require('moment')
 
 const TOP_SIDE = {
   TOP: 0,
@@ -13,60 +13,67 @@ const TOP_SIDE = {
   C: 4,
   BOTTOM: 9,
 
-  of: (value) => {
+  of: value => {
     switch (value) {
       case 0:
-        return "TOP";
+        return 'TOP'
       case 5:
-        return "COFFEE";
+        return 'COFFEE'
       case 6:
-        return "MAIL";
+        return 'MAIL'
       case 7:
-        return "CHAT";
+        return 'CHAT'
       case 8:
-        return "CLOCK";
+        return 'CLOCK'
       case 1:
-        return "D";
+        return 'D'
       case 2:
-        return "A";
+        return 'A'
       case 3:
-        return "B";
+        return 'B'
       case 4:
-        return "C";
+        return 'C'
       case 9:
-        return "BOTTOM";
+        return 'BOTTOM'
     }
   }
-};
+}
 
-const TIMESHEET_TIME_FORMAT = "HH:mm";
+const TIMESHEET_TIME_FORMAT = 'HH:mm'
 
 const getTimesheetTime = (someMoment = moment()) => {
-  const timesheetMoment = _areMinutesDivisibleByThree(someMoment) ? someMoment : _roundMinutesUpToBeDivisibleByThree(someMoment);
+  const timesheetMoment = _areMinutesDivisibleByThree(someMoment)
+    ? someMoment
+    : _roundMinutesUpToBeDivisibleByThree(someMoment)
   return timesheetMoment.format(TIMESHEET_TIME_FORMAT)
-};
+}
 
-const _areMinutesDivisibleByThree = (timesheetMoment) => {
-  return timesheetMoment.minutes() % 3 === 0;
-};
+const _areMinutesDivisibleByThree = timesheetMoment => {
+  return timesheetMoment.minutes() % 3 === 0
+}
 
-const _roundMinutesUpToBeDivisibleByThree = (timesheetMoment) => {
-  const minutesModThree = timesheetMoment.minutes() % 3;
-  return timesheetMoment.add(3 - minutesModThree, "minutes")
-};
+const _roundMinutesUpToBeDivisibleByThree = timesheetMoment => {
+  const minutesModThree = timesheetMoment.minutes() % 3
+  return timesheetMoment.add(3 - minutesModThree, 'minutes')
+}
 
-let lastChange;
+let lastChange
 
-const logChangesToTimesheetCallback = (timesheetPath) => {
+const logChangesToTimesheetCallback = timesheetPath => {
+  // eslint-disable-next-line no-unused-vars
   return (data, isNotification) => {
-    const currentTime = getTimesheetTime();
+    const currentTime = getTimesheetTime()
     if (lastChange) {
       if (_shouldNotTrack(lastChange.topSide)) {
-        fs.appendFileSync(timesheetPath, "\n");
-      }
-      else {
+        fs.appendFileSync(timesheetPath, '\n')
+      } else {
         if (lastChange.time !== currentTime) {
-          fs.appendFileSync(timesheetPath, `${lastChange.time} - ${currentTime} top side was ${TOP_SIDE.of(lastChange.topSide)}\n`);
+          fs.appendFileSync(
+            timesheetPath,
+            `${lastChange.time} - ${currentTime} top side was ${TOP_SIDE.of(
+              lastChange.topSide
+            )}\n`
+          )
         }
       }
     }
@@ -74,16 +81,16 @@ const logChangesToTimesheetCallback = (timesheetPath) => {
       time: currentTime,
       topSide: data.readUInt8(0)
     }
-  };
-};
+  }
+}
 
-const _shouldNotTrack = (topSide) => {
-  return topSide === TOP_SIDE.TOP || topSide === TOP_SIDE.BOTTOM;
-};
+const _shouldNotTrack = topSide => {
+  return topSide === TOP_SIDE.TOP || topSide === TOP_SIDE.BOTTOM
+}
 
 module.exports = {
   TIMESHEET_TIME_FORMAT,
   TOP_SIDE,
   getTimesheetTime,
   logChangesToTimesheetCallback
-};
+}

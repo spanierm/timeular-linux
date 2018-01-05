@@ -1,60 +1,78 @@
-const noble = require("noble");
-const zeiServices = require("./zeiServices");
+const noble = require('noble')
 
-const RELEVANT_SERVICES = [zeiServices.ORIENTATION.uuid];
-const TOP_SIDE_CHARACTERISTIC_UUID = zeiServices.ORIENTATION.characteristics.TOP_SIDE.uuid;
-const RELEVANT_CHARACTERISTICS = [TOP_SIDE_CHARACTERISTIC_UUID];
+const log = require('./logger')
+const zeiServices = require('./zeiServices')
 
-const subscribeToCharacteristics = (orientationChangeCallback) => {
-  _startScanning();
-  _registerToZeiEvents(orientationChangeCallback);
-};
+const RELEVANT_SERVICES = [zeiServices.ORIENTATION.uuid]
+const TOP_SIDE_CHARACTERISTIC_UUID = zeiServices.ORIENTATION.characteristics.TOP_SIDE.uuid
+const RELEVANT_CHARACTERISTICS = [TOP_SIDE_CHARACTERISTIC_UUID]
+
+const subscribeToCharacteristics = orientationChangeCallback => {
+  _startScanning()
+  _registerToZeiEvents(orientationChangeCallback)
+}
 
 const _startScanning = () => {
-  noble.on("stateChange", state => {
-    if (state === "poweredOn") {
-      console.log("Starting to scan.");
-      noble.startScanning(RELEVANT_SERVICES);
+  noble.on('stateChange', state => {
+    if (state === 'poweredOn') {
+      log.debug('Starting to scan for Bluetooth Low Energy services.')
+      noble.startScanning()
     }
-  });
-};
+  })
+}
 
-const _registerToZeiEvents = (orientationChangeEventCallback) => {
-  noble.on("discover", peripheral => {
+const _registerToZeiEvents = orientationChangeEventCallback => {
+  noble.on('discover', peripheral => {
     if (_isZeiPeripheral(peripheral)) {
-      console.log("Found a Timeular Zei peripheral!");
-      _stopScanningAndConnect(peripheral, (characteristics) => {
-        _subscribeToNotifyEvent(characteristics, TOP_SIDE_CHARACTERISTIC_UUID, orientationChangeEventCallback)
-      });
+      log.debug(`Found a Timeular Zei peripheral with the Mac address ${peripheral.address}.`)
+      _stopScanningAndConnect(peripheral, characteristics => {
+        _subscribeToNotifyEvent(
+          characteristics,
+          TOP_SIDE_CHARACTERISTIC_UUID,
+          orientationChangeEventCallback
+        )
+      })
     }
-  });
-};
+  })
+}
 
-const _isZeiPeripheral = (peripheral) => {
-  return peripheral.advertisement.localName === "Timeular ZEI";
-};
+const _isZeiPeripheral = peripheral => {
+  return peripheral.advertisement.localName === 'Timeular ZEI'
+}
 
 const _stopScanningAndConnect = (peripheral, connectionEstablishedCallback) => {
-  console.log("Stopping to scan.");
+  log.debug('Stopping to scan for Bluetooth Low Energy services.')
   noble.stopScanning(() => {
-    console.log("Connecting to the Timeular Zei peripheral.");
+    log.debug(`Connecting to the Timeular Zei with the Mac address ${peripheral.address}.`)
     peripheral.connect(error => {
-      peripheral.discoverSomeServicesAndCharacteristics(RELEVANT_SERVICES, RELEVANT_CHARACTERISTICS, (error, services, characteristics) => {
-        connectionEstablishedCallback(characteristics);
-      });
-    });
-  });
-};
+      if (error) {
+        throw new Error(`Could not connect to the Timeular Zei with the Mac address ${peripheral.address}.`)
+      }
+      peripheral.discoverSomeServicesAndCharacteristics(
+        RELEVANT_SERVICES,
+        RELEVANT_CHARACTERISTICS,
+        (error, services, characteristics) => {
+          if (error) {
+            throw new Error(`Could not discover the characteristics ${RELEVANT_CHARACTERISTICS.join(', ')}.`)
+          }
+          connectionEstablishedCallback(characteristics)
+        }
+      )
+    })
+  })
+}
 
 const _subscribeToNotifyEvent = (characteristics, uuid, eventCallback) => {
-  console.log(`Subscribing to the notify characteristic with the uuid '${uuid}.'`);
+  log.debug(
+    `Subscribing to the notify characteristic with the uuid '${uuid}.'`
+  )
   const notifyCharacteristic = characteristics.find(
     characteristic => characteristic.uuid === uuid
-  );
-  notifyCharacteristic.on("data", eventCallback);
-  notifyCharacteristic.subscribe();
-};
+  )
+  notifyCharacteristic.on('data', eventCallback)
+  notifyCharacteristic.subscribe()
+}
 
 module.exports = {
   subscribeToCharacteristics
-};
+}

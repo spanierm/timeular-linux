@@ -2,17 +2,16 @@
   "extends": [
     "eslint:recommended"
   ],
-  "plugins": [
-    "prettier"
-  ],
   "env": {
+    "mocha": true,
     "node": true
   },
   "parserOptions": {
-    "ecmaVersion": 2016
+    "ecmaVersion": 2017
   },
   "rules": {
-    "no-console": "off",
-    "prettier/prettier": "error"
+    "max-len": ["error", { "code": 120 }],
+    "quotes": ["error", "single"],
+    "semi": ["error", "never"]
   }
 }

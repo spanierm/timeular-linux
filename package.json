@@ -5,20 +5,17 @@
   "license": "MIT",
   "scripts": {
     "clean": "rimraf node_modules",
-    "lint": "eslint \"{src}/**/*.js\"",
-    "lint:fix": "eslint --fix \"{src}/**/*.js\"",
+    "lint": "eslint . --ext .js",
     "start": "node src/index.js"
   },
   "dependencies": {
-    "bluetooth-hci-socket": "^0.5.1",
     "moment": "^2.20.1",
-    "noble": "^1.8.1"
+    "noble": "^1.8.1",
+    "winston": "^3.0.0-rc1"
   },
   "devDependencies": {
     "eslint": "^4.0.0",
-    "eslint-plugin-prettier": "^2.1.1",
     "mocha": "^4.1.0",
-    "prettier": "^1.4.4",
     "proxyquire": "^1.8.0",
     "rimraf": "^2.6.2",
     "should": "^13.2.0",
