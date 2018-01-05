@@ -1,8 +1,10 @@
-npm:
-  build: .
-  privileged: true
-  net: "host"
-  volumes:
-    - .:/project
-  working_dir: /project
-  entrypoint: npm
+version: '3'
+services:
+  npm:
+    build: .
+    privileged: true
+    net: 'host'
+    volumes:
+      - .:/project
+    working_dir: /project
+    entrypoint: npm
