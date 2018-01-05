@@ -1,3 +1,4 @@
+const log = require('./logger')
 const fs = require('fs')
 const moment = require('moment')
 
@@ -63,17 +64,12 @@ const logChangesToTimesheetCallback = timesheetPath => {
   // eslint-disable-next-line no-unused-vars
   return (data, isNotification) => {
     const currentTime = getTimesheetTime()
-    if (lastChange) {
-      if (_shouldNotTrack(lastChange.topSide)) {
+    if (_shouldTrack(lastChange, currentTime)) {
+      if (_isBreak(lastChange.topSide)) {
         fs.appendFileSync(timesheetPath, '\n')
       }
       else {
-        if (lastChange.time !== currentTime) {
-          fs.appendFileSync(
-            timesheetPath,
-            `${lastChange.time} - ${currentTime} top side was ${TOP_SIDE.of(lastChange.topSide)}\n`
-          )
-        }
+        fs.appendFileSync(timesheetPath, `${lastChange.time} - ${currentTime} top side was ${TOP_SIDE.of(lastChange.topSide)}\n`)
       }
     }
     lastChange = {
@@ -83,7 +79,23 @@ const logChangesToTimesheetCallback = timesheetPath => {
   }
 }
 
-const _shouldNotTrack = topSide => {
+const _shouldTrack = (lastChange, currentTime) => {
+  if (!lastChange) {
+    log.debug('Skipping timesheet entry for initial change')
+    return false
+  }
+  else {
+    if (lastChange.time === currentTime) {
+      log.debug('Skipping timesheet entry since the time did not change')
+      return false
+    }
+    else {
+      return true
+    }
+  }
+}
+
+const _isBreak = topSide => {
   return topSide === TOP_SIDE.TOP || topSide === TOP_SIDE.BOTTOM
 }
 

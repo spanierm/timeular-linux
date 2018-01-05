@@ -3,13 +3,13 @@ const moment = require('moment')
 const proxyquire = require('proxyquire')
 require('should')
 const sinon = require('sinon')
-const timesheet = require('../src/timesheet.js')
+const timesheetLogger = require('../src/timesheetLogger.js')
 const tmp = require('tmp')
 
 describe('calculate (rounded) time from moment', () => {
   describe('entries match HH:mm', () => {
     it('entries must match HH:mm', () => {
-      const currentTime = timesheet.getTimesheetTime()
+      const currentTime = timesheetLogger.getTimesheetTime()
 
       currentTime.should.match(/\d{2}:\d{2}/)
     })
@@ -19,7 +19,7 @@ describe('calculate (rounded) time from moment', () => {
     it(`${currentHour}:${currentMinute} => ${expectedTimesheetTime}`, () => {
       const testMoment = moment().hour(currentHour).minute(currentMinute)
 
-      const currentTime = timesheet.getTimesheetTime(testMoment)
+      const currentTime = timesheetLogger.getTimesheetTime(testMoment)
 
       currentTime.should.be.equal(expectedTimesheetTime)
     })
@@ -58,7 +58,7 @@ describe('integration tests with temporary files', () => {
     for (let i = 0; i < changesOfTimeularZei.length; i++) {
       momentStub.onCall(i).returns(changesOfTimeularZei[i].moment)
     }
-    return proxyquire('../src/timesheet.js', {
+    return proxyquire('../src/timesheetLogger.js', {
       'moment': momentStub
     })
   }
@@ -80,12 +80,12 @@ describe('integration tests with temporary files', () => {
   }
 
   describe('add empty line if Timeular Zei is in base', () => {
-    [timesheet.TOP_SIDE.TOP, timesheet.TOP_SIDE.BOTTOM].forEach((topSide) => {
-      doIntegrationTestWithTemporaryTimesheetFile(`top side is ${timesheet.TOP_SIDE.of(topSide)}`, [
-        {moment: moment().hour(11).minute(0), topSide: timesheet.TOP_SIDE.A},
+    [timesheetLogger.TOP_SIDE.TOP, timesheetLogger.TOP_SIDE.BOTTOM].forEach((topSide) => {
+      doIntegrationTestWithTemporaryTimesheetFile(`top side is ${timesheetLogger.TOP_SIDE.of(topSide)}`, [
+        {moment: moment().hour(11).minute(0), topSide: timesheetLogger.TOP_SIDE.A},
         {moment: moment().hour(12).minute(0), topSide: topSide},
-        {moment: moment().hour(13).minute(0), topSide: timesheet.TOP_SIDE.A},
-        {moment: moment().hour(14).minute(0), topSide: timesheet.TOP_SIDE.B},
+        {moment: moment().hour(13).minute(0), topSide: timesheetLogger.TOP_SIDE.A},
+        {moment: moment().hour(14).minute(0), topSide: timesheetLogger.TOP_SIDE.B},
       ], '11:00 - 12:00 top side was A\n' +
         '\n' +
         '13:00 - 14:00 top side was A\n'
@@ -96,33 +96,44 @@ describe('integration tests with temporary files', () => {
 
   describe('skip entries if time did not change', () => {
     doIntegrationTestWithTemporaryTimesheetFile('same minute', [
-      {moment: moment().hour(8).minute(30), topSide: timesheet.TOP_SIDE.MAIL},
-      {moment: moment().hour(8).minute(30), topSide: timesheet.TOP_SIDE.CHAT},
-      {moment: moment().hour(9).minute(30), topSide: timesheet.TOP_SIDE.MAIL}
+      {moment: moment().hour(8).minute(30), topSide: timesheetLogger.TOP_SIDE.MAIL},
+      {moment: moment().hour(8).minute(30), topSide: timesheetLogger.TOP_SIDE.CHAT},
+      {moment: moment().hour(9).minute(30), topSide: timesheetLogger.TOP_SIDE.MAIL}
     ], '08:30 - 09:30 top side was CHAT\n')
 
     doIntegrationTestWithTemporaryTimesheetFile('same minute after rounding', [
-      {moment: moment().hour(8).minute(28), topSide: timesheet.TOP_SIDE.MAIL},
-      {moment: moment().hour(8).minute(30), topSide: timesheet.TOP_SIDE.CHAT},
-      {moment: moment().hour(9).minute(29), topSide: timesheet.TOP_SIDE.MAIL},
-      {moment: moment().hour(9).minute(30), topSide: timesheet.TOP_SIDE.CLOCK},
-      {moment: moment().hour(10).minute(30), topSide: timesheet.TOP_SIDE.MAIL}
+      {moment: moment().hour(8).minute(28), topSide: timesheetLogger.TOP_SIDE.MAIL},
+      {moment: moment().hour(8).minute(30), topSide: timesheetLogger.TOP_SIDE.CHAT},
+      {moment: moment().hour(9).minute(29), topSide: timesheetLogger.TOP_SIDE.MAIL},
+      {moment: moment().hour(9).minute(30), topSide: timesheetLogger.TOP_SIDE.CLOCK},
+      {moment: moment().hour(10).minute(30), topSide: timesheetLogger.TOP_SIDE.MAIL}
     ], '08:30 - 09:30 top side was CHAT\n' +
+      '09:30 - 10:30 top side was CLOCK\n')
+
+    doIntegrationTestWithTemporaryTimesheetFile('for breaks as well', [
+      {moment: moment().hour(8).minute(28), topSide: timesheetLogger.TOP_SIDE.TOP},
+      {moment: moment().hour(8).minute(30), topSide: timesheetLogger.TOP_SIDE.BOTTOM},
+      {moment: moment().hour(9).minute(0), topSide: timesheetLogger.TOP_SIDE.MAIL},
+      {moment: moment().hour(9).minute(29), topSide: timesheetLogger.TOP_SIDE.TOP},
+      {moment: moment().hour(9).minute(30), topSide: timesheetLogger.TOP_SIDE.CLOCK},
+      {moment: moment().hour(10).minute(30), topSide: timesheetLogger.TOP_SIDE.MAIL}
+    ], '\n' +
+      '09:00 - 09:30 top side was MAIL\n' +
       '09:30 - 10:30 top side was CLOCK\n')
   })
 
   doIntegrationTestWithTemporaryTimesheetFile('end-to-end test', [
-    {moment: moment().hour(8).minute(0), topSide: timesheet.TOP_SIDE.MAIL},
-    {moment: moment().hour(8).minute(15), topSide: timesheet.TOP_SIDE.A},
-    {moment: moment().hour(9).minute(0), topSide: timesheet.TOP_SIDE.CLOCK},
-    {moment: moment().hour(9).minute(15), topSide: timesheet.TOP_SIDE.A},
-    {moment: moment().hour(9).minute(45), topSide: timesheet.TOP_SIDE.TOP},
-    {moment: moment().hour(10).minute(0), topSide: timesheet.TOP_SIDE.A},
-    {moment: moment().hour(12).minute(0), topSide: timesheet.TOP_SIDE.B},
-    {moment: moment().hour(13).minute(0), topSide: timesheet.TOP_SIDE.BOTTOM},
-    {moment: moment().hour(14).minute(0), topSide: timesheet.TOP_SIDE.B},
-    {moment: moment().hour(14).minute(0), topSide: timesheet.TOP_SIDE.C},
-    {moment: moment().hour(16).minute(0), topSide: timesheet.TOP_SIDE.A}
+    {moment: moment().hour(8).minute(0), topSide: timesheetLogger.TOP_SIDE.MAIL},
+    {moment: moment().hour(8).minute(15), topSide: timesheetLogger.TOP_SIDE.A},
+    {moment: moment().hour(9).minute(0), topSide: timesheetLogger.TOP_SIDE.CLOCK},
+    {moment: moment().hour(9).minute(15), topSide: timesheetLogger.TOP_SIDE.A},
+    {moment: moment().hour(9).minute(45), topSide: timesheetLogger.TOP_SIDE.TOP},
+    {moment: moment().hour(10).minute(0), topSide: timesheetLogger.TOP_SIDE.A},
+    {moment: moment().hour(12).minute(0), topSide: timesheetLogger.TOP_SIDE.B},
+    {moment: moment().hour(13).minute(0), topSide: timesheetLogger.TOP_SIDE.BOTTOM},
+    {moment: moment().hour(14).minute(0), topSide: timesheetLogger.TOP_SIDE.B},
+    {moment: moment().hour(14).minute(0), topSide: timesheetLogger.TOP_SIDE.C},
+    {moment: moment().hour(16).minute(0), topSide: timesheetLogger.TOP_SIDE.A}
   ], '08:00 - 08:15 top side was MAIL\n' +
     '08:15 - 09:00 top side was A\n' +
     '09:00 - 09:15 top side was CLOCK\n' +
