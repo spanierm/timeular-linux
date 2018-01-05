@@ -15,7 +15,9 @@ const subscribeToCharacteristics = orientationChangeCallback => {
 const _startScanning = () => {
   noble.on('stateChange', state => {
     if (state === 'poweredOn') {
-      log.debug('Starting to scan for Bluetooth Low Energy services.')
+      log.debug('Starting to scan for a Timeular Zei.')
+      // todo Only scanning for dedicated services does not work.
+      // noble.startScanning(RELEVANT_SERVICES)
       noble.startScanning()
     }
   })
@@ -41,13 +43,14 @@ const _isZeiPeripheral = peripheral => {
 }
 
 const _stopScanningAndConnect = (peripheral, connectionEstablishedCallback) => {
-  log.debug('Stopping to scan for Bluetooth Low Energy services.')
+  log.debug('Stopping to scan for a Timeular Zei.')
   noble.stopScanning(() => {
     log.debug(`Connecting to the Timeular Zei with the Mac address ${peripheral.address}.`)
     peripheral.connect(error => {
       if (error) {
         throw new Error(`Could not connect to the Timeular Zei with the Mac address ${peripheral.address}.`)
       }
+      log.debug(`Connected to the Timeular Zei with the Mac address ${peripheral.address}.`)
       peripheral.discoverSomeServicesAndCharacteristics(
         RELEVANT_SERVICES,
         RELEVANT_CHARACTERISTICS,

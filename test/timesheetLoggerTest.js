@@ -1,5 +1,6 @@
 const fs = require('fs')
 const moment = require('moment')
+const path = require('path')
 const proxyquire = require('proxyquire')
 require('should')
 const sinon = require('sinon')
@@ -40,12 +41,11 @@ describe('calculate (rounded) time from moment', () => {
 describe('integration tests with temporary files', () => {
   const doIntegrationTestWithTemporaryTimesheetFile = (testDescription, changesOfTimeularZei, expectedContent) => {
     it(testDescription, () => {
-      const timesheetWithStubbedMomentLibrary = setupMomentStub(changesOfTimeularZei)
-      const {logChangesToTimesheetCallback, filename} =
-        logChangesToTemporaryTimesheetCallback(timesheetWithStubbedMomentLibrary)
+      const timesheetWithStubbedMomentLibrary = _setupMomentStub(changesOfTimeularZei)
+      const {logChangesToTimesheetCallback, filename} = _logChangesToTemporaryTimesheetCallback(timesheetWithStubbedMomentLibrary)
 
       for (let i = 0; i < changesOfTimeularZei.length; i++) {
-        logChangesToTimesheetCallback(createTopSideDataBuffer(changesOfTimeularZei[i].topSide))
+        logChangesToTimesheetCallback(_createTopSideDataBuffer(changesOfTimeularZei[i].topSide))
       }
 
       const actualConent = fs.readFileSync(filename).toString()
@@ -53,7 +53,7 @@ describe('integration tests with temporary files', () => {
     })
   }
 
-  const setupMomentStub = (changesOfTimeularZei) => {
+  const _setupMomentStub = (changesOfTimeularZei) => {
     const momentStub = sinon.stub()
     for (let i = 0; i < changesOfTimeularZei.length; i++) {
       momentStub.onCall(i).returns(changesOfTimeularZei[i].moment)
@@ -63,23 +63,22 @@ describe('integration tests with temporary files', () => {
     })
   }
 
-  const logChangesToTemporaryTimesheetCallback = (timesheetWithStubbedMomentLibrary) => {
+  const _logChangesToTemporaryTimesheetCallback = (timesheetWithStubbedMomentLibrary) => {
     const temporaryFile = tmp.fileSync()
-    const logChangesToTimesheetCallback =
-      timesheetWithStubbedMomentLibrary.logChangesToTimesheetCallback(temporaryFile.name)
+    const logChangesToTimesheetCallback = timesheetWithStubbedMomentLibrary.logChangesToTimesheetCallback(temporaryFile.name)
     return {
       logChangesToTimesheetCallback,
       filename: temporaryFile.name
     }
   }
 
-  const createTopSideDataBuffer = (topSideValue) => {
+  const _createTopSideDataBuffer = (topSideValue) => {
     const buffer = new Buffer(1)
     buffer.writeInt8(topSideValue)
     return buffer
   }
 
-  describe('add empty line if Timeular Zei is in base', () => {
+  describe('add empty line if Timeular Zei is placed on its base', () => {
     [timesheetLogger.TOP_SIDE.TOP, timesheetLogger.TOP_SIDE.BOTTOM].forEach((topSide) => {
       doIntegrationTestWithTemporaryTimesheetFile(`top side is ${timesheetLogger.TOP_SIDE.of(topSide)}`, [
         {moment: moment().hour(11).minute(0), topSide: timesheetLogger.TOP_SIDE.A},
@@ -91,7 +90,6 @@ describe('integration tests with temporary files', () => {
         '13:00 - 14:00 top side was A\n'
       )
     })
-
   })
 
   describe('skip entries if time did not change', () => {
@@ -120,6 +118,35 @@ describe('integration tests with temporary files', () => {
     ], '\n' +
       '09:00 - 09:30 top side was MAIL\n' +
       '09:30 - 10:30 top side was CLOCK\n')
+  })
+
+  describe('works arbitrary (non-existing) files', () => {
+    const logToTimesheetOnGivenFilePath = (filePathParts) => {
+      it(filePathParts.join(path.sep), () => {
+        const temporaryDirectory = tmp.dirSync({unsafeCleanup: true})
+        const temporaryFilePath = path.join(temporaryDirectory.name, ...filePathParts)
+        const changesOfTimeularZei = [
+          {moment: moment().hour(8).minute(0), topSide: timesheetLogger.TOP_SIDE.MAIL},
+          {moment: moment().hour(9).minute(0), topSide: timesheetLogger.TOP_SIDE.CLOCK}
+        ]
+        const timesheetWithStubbedMomentLibrary = _setupMomentStub(changesOfTimeularZei)
+        const logChangesToTimesheetCallback = timesheetWithStubbedMomentLibrary.logChangesToTimesheetCallback(temporaryFilePath)
+
+        for (let i = 0; i < changesOfTimeularZei.length; i++) {
+          logChangesToTimesheetCallback(_createTopSideDataBuffer(changesOfTimeularZei[i].topSide))
+        }
+
+        const actualConent = fs.readFileSync(temporaryFilePath).toString()
+        actualConent.should.equal('08:00 - 09:00 top side was MAIL\n')
+      })
+    }
+
+    logToTimesheetOnGivenFilePath(['file'])
+    logToTimesheetOnGivenFilePath(['file.temp'])
+    logToTimesheetOnGivenFilePath(['folder', 'file'])
+    logToTimesheetOnGivenFilePath(['folder', 'file.temp'])
+    logToTimesheetOnGivenFilePath(['folder', 'subfolder', 'file'])
+    logToTimesheetOnGivenFilePath(['folder', 'subfolder', 'file.temp'])
   })
 
   doIntegrationTestWithTemporaryTimesheetFile('end-to-end test', [

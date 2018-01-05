@@ -1,6 +1,9 @@
-const log = require('./logger')
 const fs = require('fs')
+const mkdirp = require('mkdirp')
 const moment = require('moment')
+const path = require('path')
+
+const log = require('./logger')
 
 const TOP_SIDE = {
   TOP: 0,
@@ -65,11 +68,12 @@ const logChangesToTimesheetCallback = timesheetPath => {
   return (data, isNotification) => {
     const currentTime = getTimesheetTime()
     if (_shouldTrack(lastChange, currentTime)) {
+      // _createTimesheetIfItDoesNotExist(timesheetPath)
       if (_isBreak(lastChange.topSide)) {
-        fs.appendFileSync(timesheetPath, '\n')
+        _writeToTimesheet(timesheetPath, '\n')
       }
       else {
-        fs.appendFileSync(timesheetPath, `${lastChange.time} - ${currentTime} top side was ${TOP_SIDE.of(lastChange.topSide)}\n`)
+        _writeToTimesheet(timesheetPath, `${lastChange.time} - ${currentTime} top side was ${TOP_SIDE.of(lastChange.topSide)}\n`)
       }
     }
     lastChange = {
@@ -92,6 +96,16 @@ const _shouldTrack = (lastChange, currentTime) => {
     else {
       return true
     }
+  }
+}
+
+const _writeToTimesheet = (timesheetPath, data) => {
+  if (fs.existsSync(timesheetPath)) {
+    fs.appendFileSync(timesheetPath, data)
+  }
+  else {
+    mkdirp.sync(path.dirname(timesheetPath))
+    fs.writeFileSync(timesheetPath, data)
   }
 }
 
