@@ -9,7 +9,8 @@ noble.on('stateChange', state => {
   if (state === 'poweredOn') {
     log.info('Starting to scan...')
     noble.startScanning()
-  } else {
+  }
+  else {
     log.info('Stopping to scan...')
     noble.stopScanning()
   }

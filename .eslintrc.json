@@ -10,7 +10,8 @@
     "ecmaVersion": 2017
   },
   "rules": {
-    "max-len": ["error", { "code": 120 }],
+    "brace-style": ["error", "stroustrup"],
+    "curly": ["error"],
     "quotes": ["error", "single"],
     "semi": ["error", "never"]
   }

@@ -66,13 +66,12 @@ const logChangesToTimesheetCallback = timesheetPath => {
     if (lastChange) {
       if (_shouldNotTrack(lastChange.topSide)) {
         fs.appendFileSync(timesheetPath, '\n')
-      } else {
+      }
+      else {
         if (lastChange.time !== currentTime) {
           fs.appendFileSync(
             timesheetPath,
-            `${lastChange.time} - ${currentTime} top side was ${TOP_SIDE.of(
-              lastChange.topSide
-            )}\n`
+            `${lastChange.time} - ${currentTime} top side was ${TOP_SIDE.of(lastChange.topSide)}\n`
           )
         }
       }

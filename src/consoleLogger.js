@@ -42,10 +42,18 @@ const TOP_SIDE = {
   }
 }
 
+let currentTopSide
+
 // eslint-disable-next-line no-unused-vars
 const logOrientationChangesToConsole = (data, isNotification) => {
-  const newTopSide = TOP_SIDE.of(data.readUInt8(0))
-  log.info(`changed top side to ${newTopSide}`)
+  const newTopSide = data.readUInt8(0)
+  if (currentTopSide) {
+    log.info(`changed top side: ${TOP_SIDE.of(currentTopSide)} => ${TOP_SIDE.of(newTopSide)} (values: ${currentTopSide} => ${newTopSide})`)
+  }
+  else {
+    log.info(`initial change of top side: ${TOP_SIDE.of(newTopSide)} (value: => ${newTopSide})`)
+  }
+  currentTopSide = newTopSide
 }
 
 module.exports = {
