@@ -1,6 +1,6 @@
 const noble = require('noble')
 
-const log = require('./logger')
+const log = require('./logFactory').getLogger()
 const zeiServices = require('./zeiServices')
 
 const RELEVANT_SERVICES = [zeiServices.ORIENTATION.uuid]

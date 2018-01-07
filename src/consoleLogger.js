@@ -1,4 +1,4 @@
-const log = require('./logger')
+const log = require('./logFactory').getLogger()
 
 // - fields following the point of the compass with the push button panel heading north
 // - distinction top / bottom (looking from the side with the push button panel horizontally):

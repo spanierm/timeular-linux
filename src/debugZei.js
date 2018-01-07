@@ -2,7 +2,7 @@
 
 const noble = require('noble')
 
-const log = require('./logger')
+const log = require('./logFactory').getLogger()
 const zei = require('./zei')
 
 noble.on('stateChange', state => {

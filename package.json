@@ -6,7 +6,8 @@
   "scripts": {
     "clean": "rimraf node_modules",
     "lint": "eslint . --ext .js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "test": "npm run lint && mocha test"
   },
   "dependencies": {
     "mkdirp": "^0.5.1",

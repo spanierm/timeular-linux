@@ -3,7 +3,7 @@ const mkdirp = require('mkdirp')
 const moment = require('moment')
 const path = require('path')
 
-const log = require('./logger')
+const log = require('./logFactory').getLogger()
 
 const TOP_SIDE = {
   TOP: 0,
