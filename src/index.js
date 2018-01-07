@@ -13,4 +13,4 @@ zei.subscribeToCharacteristics((data, isNotification) => {
   timesheetLogger.logChangesToTimesheetCallback(TIMESHEET_PATH)(data, isNotification)
 })
 
-
+// todo read Messages from file

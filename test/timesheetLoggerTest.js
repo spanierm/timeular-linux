@@ -1,10 +1,14 @@
+const chai = require('chai')
 const fs = require('fs')
 const moment = require('moment')
 const path = require('path')
 const proxyquire = require('proxyquire')
-require('should')
 const sinon = require('sinon')
+const sinonChai = require('sinon-chai')
 const tmp = require('tmp')
+
+chai.should()
+chai.use(sinonChai)
 
 const timesheetLogger = require('../src/timesheetLogger.js')
 
@@ -23,7 +27,7 @@ describe('calculate (rounded) time from moment', () => {
 
       const currentTime = timesheetLogger.getTimesheetTime(testMoment)
 
-      currentTime.should.be.equal(expectedTimesheetTime)
+      currentTime.should.equal(expectedTimesheetTime)
     })
   }
 

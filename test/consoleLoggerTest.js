@@ -1,6 +1,12 @@
-const consoleLogger = require('../src/consoleLogger')
+const chai = require('chai')
 const proxyquire = require('proxyquire')
 const sinon = require('sinon')
+const sinonChai = require('sinon-chai')
+
+chai.should()
+chai.use(sinonChai)
+
+const consoleLogger = require('../src/consoleLogger')
 
 const _createConsoleLoggerWithLogSpy = () => {
   const consoleLoggerSpy = {
@@ -27,10 +33,9 @@ const doIntegrationTestWithLoggerSpy = (topSides) => {
       consoleLogger.logOrientationChangesToConsole(_createTopSideDataBuffer(topSide), false)
     })
 
-    consoleLoggerSpy.info.args.length.should.equal(topSides.length)
+    consoleLoggerSpy.info.should.have.callCount(topSides.length)
     let previouseTopSide
-    topSides.forEach((topSide, index) => {
-      consoleLoggerSpy.info.args[index].length.should.equal(1)
+    topSides.forEach(topSide => {
       let checkForTopSidesRegex
       if (previouseTopSide) {
         checkForTopSidesRegex = new RegExp(`${consoleLogger.TOP_SIDE.of(previouseTopSide)}.+${consoleLogger.TOP_SIDE.of(topSide)}`)
@@ -38,7 +43,7 @@ const doIntegrationTestWithLoggerSpy = (topSides) => {
       else {
         checkForTopSidesRegex = new RegExp(`${consoleLogger.TOP_SIDE.of(topSide)}`)
       }
-      consoleLoggerSpy.info.args[index][0].should.match(checkForTopSidesRegex)
+      consoleLoggerSpy.info.should.have.been.calledWithMatch(checkForTopSidesRegex)
       previouseTopSide = topSide
     })
   })
