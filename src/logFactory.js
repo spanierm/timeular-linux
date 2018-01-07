@@ -1,7 +1,7 @@
 const {createLogger, format, transports} = require('winston')
 const {align, combine, printf, timestamp} = format
 
-const getLogger = (level = 'debug', logToConsole = true, logToFile) => {
+const getLogger = (level = 'info', logToConsole = true, logToFile) => {
   return createLogger({
     format: combine(
       align(),
