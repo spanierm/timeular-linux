@@ -5,44 +5,6 @@ const path = require('path')
 
 const log = require('./logFactory').getLogger()
 
-const TOP_SIDE = {
-  TOP: 0,
-  COFFEE: 5,
-  MAIL: 6,
-  CHAT: 7,
-  CLOCK: 8,
-  D: 1,
-  A: 2,
-  B: 3,
-  C: 4,
-  BOTTOM: 9,
-
-  of: value => {
-    switch (value) {
-      case 0:
-        return 'TOP'
-      case 5:
-        return 'COFFEE'
-      case 6:
-        return 'MAIL'
-      case 7:
-        return 'CHAT'
-      case 8:
-        return 'CLOCK'
-      case 1:
-        return 'D'
-      case 2:
-        return 'A'
-      case 3:
-        return 'B'
-      case 4:
-        return 'C'
-      case 9:
-        return 'BOTTOM'
-    }
-  }
-}
-
 const TIMESHEET_TIME_FORMAT = 'HH:mm'
 
 const getTimesheetTime = (someMoment = moment()) => {
@@ -63,17 +25,17 @@ const _roundMinutesUpToBeDivisibleByThree = timesheetMoment => {
 
 let lastChange
 
-const logChangesToTimesheetCallback = timesheetPath => {
+const logChangesToTimesheetCallback = (timesheetFile, topSideDefinitionPath) => {
   // eslint-disable-next-line no-unused-vars
   return (data, isNotification) => {
     const currentTime = getTimesheetTime()
     if (_shouldTrack(lastChange, currentTime)) {
-      // _createTimesheetIfItDoesNotExist(timesheetPath)
       if (_isBreak(lastChange.topSide)) {
-        _writeToTimesheet(timesheetPath, '\n')
+        _writeToTimesheet(timesheetFile, '\n')
       }
       else {
-        _writeToTimesheet(timesheetPath, `${lastChange.time} - ${currentTime} top side was ${TOP_SIDE.of(lastChange.topSide)}\n`)
+        const topSideDefinition = JSON.parse(fs.readFileSync(topSideDefinitionPath, 'utf8'))
+        _writeToTimesheet(timesheetFile, `${lastChange.time} - ${currentTime} ${topSideDefinition[lastChange.topSide].message}\n`)
       }
     }
     lastChange = {
@@ -110,12 +72,13 @@ const _writeToTimesheet = (timesheetPath, data) => {
 }
 
 const _isBreak = topSide => {
-  return topSide === TOP_SIDE.TOP || topSide === TOP_SIDE.BOTTOM
+  const topTip = 0
+  const bottomTip = 9
+  return topSide === topTip || topSide === bottomTip
 }
 
 module.exports = {
   TIMESHEET_TIME_FORMAT,
-  TOP_SIDE,
   getTimesheetTime,
   logChangesToTimesheetCallback
 }

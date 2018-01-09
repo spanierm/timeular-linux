@@ -10,6 +10,29 @@ const tmp = require('tmp')
 chai.should()
 chai.use(sinonChai)
 
+const topSides = [
+  {sticker: 'TOP', message: ''},
+  {sticker: 'D', message: 'message: D'},
+  {sticker: 'A', message: 'message: A'},
+  {sticker: 'B', message: 'message: B'},
+  {sticker: 'C', message: 'message: C'},
+  {sticker: 'GEAR', message: 'message: GEAR'},
+  {sticker: 'MAIL', message: 'message: MAIL'},
+  {sticker: 'CHAT', message: 'message: CHAT'},
+  {sticker: 'CLOCK', message: 'message: CLOCK'},
+  {sticker: 'BOTTOM', message: ''}
+]
+
+const breaks = topSides.map(topSide => topSide.message).filter(message => !message, (_, index) => index)
+
+const topSidesReverseMapping = (() => {
+  const reverseMapping = {}
+  topSides.forEach((topSide, index) => {
+    reverseMapping[topSide.sticker] = index
+  })
+  return reverseMapping
+})()
+
 const timesheetLogger = require('../src/timesheetLogger.js')
 
 describe('calculate (rounded) time from moment', () => {
@@ -47,13 +70,13 @@ describe('integration tests with temporary files', () => {
   const doIntegrationTestWithTemporaryTimesheetFile = (testDescription, changesOfTimeularZei, expectedContent) => {
     it(testDescription, () => {
       const timesheetLoggerWithMomentStub = _createTimesheetLoggerWithMomentStub(changesOfTimeularZei)
-      const {logChangesToTimesheetCallback, filename} = _logChangesToTemporaryTimesheetCallback(timesheetLoggerWithMomentStub)
+      const {logChangesToTimesheetCallback, timesheetPath} = _logChangesToTemporaryTimesheetCallback(timesheetLoggerWithMomentStub)
 
       changesOfTimeularZei.forEach(changeOfTimeularZei => {
-        logChangesToTimesheetCallback(_createTopSideDataBuffer(changeOfTimeularZei.topSide))
+        logChangesToTimesheetCallback(_createTopSideDataBuffer(changeOfTimeularZei.sticker))
       })
 
-      const actualConent = fs.readFileSync(filename).toString()
+      const actualConent = fs.readFileSync(timesheetPath, 'utf8')
       actualConent.should.equal(expectedContent)
     })
   }
@@ -69,12 +92,19 @@ describe('integration tests with temporary files', () => {
   }
 
   const _logChangesToTemporaryTimesheetCallback = (timesheetLoggerWithMomentStub) => {
-    const temporaryFile = tmp.fileSync()
-    const logChangesToTimesheetCallback = timesheetLoggerWithMomentStub.logChangesToTimesheetCallback(temporaryFile.name)
+    const timesheetPath = tmp.fileSync().name
+    const topSideDefinitionPath = _createTemporaryFileWithTopSideDefinition()
+    const logChangesToTimesheetCallback = timesheetLoggerWithMomentStub.logChangesToTimesheetCallback(timesheetPath, topSideDefinitionPath)
     return {
       logChangesToTimesheetCallback,
-      filename: temporaryFile.name
+      timesheetPath
     }
+  }
+
+  const _createTemporaryFileWithTopSideDefinition = () => {
+    const topSideDefinitionPath = tmp.fileSync().name
+    fs.writeFileSync(topSideDefinitionPath, JSON.stringify(topSides))
+    return topSideDefinitionPath
   }
 
   const _createTopSideDataBuffer = (topSideValue) => {
@@ -84,65 +114,66 @@ describe('integration tests with temporary files', () => {
   }
 
   describe('add empty line if Timeular Zei is placed on its base', () => {
-    [timesheetLogger.TOP_SIDE.TOP, timesheetLogger.TOP_SIDE.BOTTOM].forEach((topSide) => {
-      doIntegrationTestWithTemporaryTimesheetFile(`top side is ${timesheetLogger.TOP_SIDE.of(topSide)}`, [
-        {moment: moment().hour(11).minute(0), topSide: timesheetLogger.TOP_SIDE.A},
-        {moment: moment().hour(12).minute(0), topSide: topSide},
-        {moment: moment().hour(13).minute(0), topSide: timesheetLogger.TOP_SIDE.A},
-        {moment: moment().hour(14).minute(0), topSide: timesheetLogger.TOP_SIDE.B},
-      ], '11:00 - 12:00 top side was A\n' +
+    breaks.forEach((topSide) => {
+      doIntegrationTestWithTemporaryTimesheetFile(`top side is ${topSidesReverseMapping[topSide]}`, [
+        {moment: moment().hour(11).minute(0), sticker: topSidesReverseMapping['MAIL']},
+        {moment: moment().hour(12).minute(0), sticker: topSide},
+        {moment: moment().hour(13).minute(0), sticker: topSidesReverseMapping['A']},
+        {moment: moment().hour(14).minute(0), sticker: topSidesReverseMapping['B']},
+      ], '11:00 - 12:00 message: MAIL\n' +
         '\n' +
-        '13:00 - 14:00 top side was A\n'
+        '13:00 - 14:00 message: A\n'
       )
     })
   })
 
   describe('skip entries if time did not change', () => {
     doIntegrationTestWithTemporaryTimesheetFile('same minute', [
-      {moment: moment().hour(8).minute(30), topSide: timesheetLogger.TOP_SIDE.MAIL},
-      {moment: moment().hour(8).minute(30), topSide: timesheetLogger.TOP_SIDE.CHAT},
-      {moment: moment().hour(9).minute(30), topSide: timesheetLogger.TOP_SIDE.MAIL}
-    ], '08:30 - 09:30 top side was CHAT\n')
+      {moment: moment().hour(8).minute(30), sticker: topSidesReverseMapping['MAIL']},
+      {moment: moment().hour(8).minute(30), sticker: topSidesReverseMapping['CHAT']},
+      {moment: moment().hour(9).minute(30), sticker: topSidesReverseMapping['MAIL']}
+    ], '08:30 - 09:30 message: CHAT\n')
 
     doIntegrationTestWithTemporaryTimesheetFile('same minute after rounding', [
-      {moment: moment().hour(8).minute(28), topSide: timesheetLogger.TOP_SIDE.MAIL},
-      {moment: moment().hour(8).minute(30), topSide: timesheetLogger.TOP_SIDE.COFFEE},
-      {moment: moment().hour(9).minute(29), topSide: timesheetLogger.TOP_SIDE.MAIL},
-      {moment: moment().hour(9).minute(30), topSide: timesheetLogger.TOP_SIDE.CLOCK},
-      {moment: moment().hour(10).minute(30), topSide: timesheetLogger.TOP_SIDE.MAIL}
-    ], '08:30 - 09:30 top side was COFFEE\n' +
-      '09:30 - 10:30 top side was CLOCK\n')
+      {moment: moment().hour(8).minute(28), sticker: topSidesReverseMapping['MAIL']},
+      {moment: moment().hour(8).minute(30), sticker: topSidesReverseMapping['GEAR']},
+      {moment: moment().hour(9).minute(29), sticker: topSidesReverseMapping['MAIL']},
+      {moment: moment().hour(9).minute(30), sticker: topSidesReverseMapping['CLOCK']},
+      {moment: moment().hour(10).minute(30), sticker: topSidesReverseMapping['MAIL']}
+    ], '08:30 - 09:30 message: GEAR\n' +
+      '09:30 - 10:30 message: CLOCK\n')
 
     doIntegrationTestWithTemporaryTimesheetFile('for breaks as well', [
-      {moment: moment().hour(8).minute(28), topSide: timesheetLogger.TOP_SIDE.TOP},
-      {moment: moment().hour(8).minute(30), topSide: timesheetLogger.TOP_SIDE.BOTTOM},
-      {moment: moment().hour(9).minute(0), topSide: timesheetLogger.TOP_SIDE.MAIL},
-      {moment: moment().hour(9).minute(29), topSide: timesheetLogger.TOP_SIDE.TOP},
-      {moment: moment().hour(9).minute(30), topSide: timesheetLogger.TOP_SIDE.CLOCK},
-      {moment: moment().hour(10).minute(30), topSide: timesheetLogger.TOP_SIDE.MAIL}
+      {moment: moment().hour(8).minute(28), sticker: topSidesReverseMapping['TOP']},
+      {moment: moment().hour(8).minute(30), sticker: topSidesReverseMapping['BOTTOM']},
+      {moment: moment().hour(9).minute(0), sticker: topSidesReverseMapping['MAIL']},
+      {moment: moment().hour(9).minute(29), sticker: topSidesReverseMapping['TOP']},
+      {moment: moment().hour(9).minute(30), sticker: topSidesReverseMapping['CLOCK']},
+      {moment: moment().hour(10).minute(30), sticker: topSidesReverseMapping['MAIL']}
     ], '\n' +
-      '09:00 - 09:30 top side was MAIL\n' +
-      '09:30 - 10:30 top side was CLOCK\n')
+      '09:00 - 09:30 message: MAIL\n' +
+      '09:30 - 10:30 message: CLOCK\n')
   })
 
   describe('works arbitrary (non-existing) files', () => {
     const logToTimesheetOnGivenFilePath = (filePathParts) => {
       it(filePathParts.join(path.sep), () => {
-        const temporaryDirectory = tmp.dirSync({unsafeCleanup: true})
-        const temporaryFilePath = path.join(temporaryDirectory.name, ...filePathParts)
         const changesOfTimeularZei = [
-          {moment: moment().hour(8).minute(0), topSide: timesheetLogger.TOP_SIDE.MAIL},
-          {moment: moment().hour(9).minute(0), topSide: timesheetLogger.TOP_SIDE.CLOCK}
+          {moment: moment().hour(8).minute(0), sticker: topSidesReverseMapping['MAIL']},
+          {moment: moment().hour(9).minute(0), sticker: topSidesReverseMapping['CLOCK']}
         ]
-        const timesheetLoggerWithStubbedMomentLibrary = _createTimesheetLoggerWithMomentStub(changesOfTimeularZei)
-        const logChangesToTimesheetCallback = timesheetLoggerWithStubbedMomentLibrary.logChangesToTimesheetCallback(temporaryFilePath)
+        const temporaryDirectory = tmp.dirSync({unsafeCleanup: true}).name
+        const temporaryFilePath = path.join(temporaryDirectory, ...filePathParts)
+        const topSideDefinition = _createTemporaryFileWithTopSideDefinition()
+        const timesheetLoggerWithMomentStub = _createTimesheetLoggerWithMomentStub(changesOfTimeularZei)
+        const logChangesToTimesheetCallback = timesheetLoggerWithMomentStub.logChangesToTimesheetCallback(temporaryFilePath, topSideDefinition)
 
         for (let i = 0; i < changesOfTimeularZei.length; i++) {
-          logChangesToTimesheetCallback(_createTopSideDataBuffer(changesOfTimeularZei[i].topSide))
+          logChangesToTimesheetCallback(_createTopSideDataBuffer(changesOfTimeularZei[i].sticker))
         }
 
         const actualConent = fs.readFileSync(temporaryFilePath).toString()
-        actualConent.should.equal('08:00 - 09:00 top side was MAIL\n')
+        actualConent.should.equal('08:00 - 09:00 message: MAIL\n')
       })
     }
 
@@ -155,27 +186,65 @@ describe('integration tests with temporary files', () => {
   })
 
   doIntegrationTestWithTemporaryTimesheetFile('end-to-end test', [
-    {moment: moment().hour(8).minute(0), topSide: timesheetLogger.TOP_SIDE.MAIL},
-    {moment: moment().hour(8).minute(15), topSide: timesheetLogger.TOP_SIDE.A},
-    {moment: moment().hour(9).minute(0), topSide: timesheetLogger.TOP_SIDE.CLOCK},
-    {moment: moment().hour(9).minute(15), topSide: timesheetLogger.TOP_SIDE.A},
-    {moment: moment().hour(9).minute(45), topSide: timesheetLogger.TOP_SIDE.TOP},
-    {moment: moment().hour(10).minute(0), topSide: timesheetLogger.TOP_SIDE.A},
-    {moment: moment().hour(11).minute(59), topSide: timesheetLogger.TOP_SIDE.B},
-    {moment: moment().hour(13).minute(0), topSide: timesheetLogger.TOP_SIDE.BOTTOM},
-    {moment: moment().hour(14).minute(0), topSide: timesheetLogger.TOP_SIDE.B},
-    {moment: moment().hour(14).minute(0), topSide: timesheetLogger.TOP_SIDE.C},
-    {moment: moment().hour(15).minute(52), topSide: timesheetLogger.TOP_SIDE.D},
-    {moment: moment().hour(16).minute(0), topSide: timesheetLogger.TOP_SIDE.A}
-  ], '08:00 - 08:15 top side was MAIL\n' +
-    '08:15 - 09:00 top side was A\n' +
-    '09:00 - 09:15 top side was CLOCK\n' +
-    '09:15 - 09:45 top side was A\n' +
+    {moment: moment().hour(8).minute(0), sticker: topSidesReverseMapping['MAIL']},
+    {moment: moment().hour(8).minute(15), sticker: topSidesReverseMapping['A']},
+    {moment: moment().hour(9).minute(0), sticker: topSidesReverseMapping['CLOCK']},
+    {moment: moment().hour(9).minute(15), sticker: topSidesReverseMapping['A']},
+    {moment: moment().hour(9).minute(45), sticker: topSidesReverseMapping['TOP']},
+    {moment: moment().hour(10).minute(0), sticker: topSidesReverseMapping['A']},
+    {moment: moment().hour(11).minute(59), sticker: topSidesReverseMapping['B']},
+    {moment: moment().hour(13).minute(0), sticker: topSidesReverseMapping['BOTTOM']},
+    {moment: moment().hour(14).minute(0), sticker: topSidesReverseMapping['B']},
+    {moment: moment().hour(14).minute(0), sticker: topSidesReverseMapping['C']},
+    {moment: moment().hour(15).minute(52), sticker: topSidesReverseMapping['D']},
+    {moment: moment().hour(16).minute(0), sticker: topSidesReverseMapping['A']}
+  ], '08:00 - 08:15 message: MAIL\n' +
+    '08:15 - 09:00 message: A\n' +
+    '09:00 - 09:15 message: CLOCK\n' +
+    '09:15 - 09:45 message: A\n' +
     '\n' +
-    '10:00 - 12:00 top side was A\n' +
-    '12:00 - 13:00 top side was B\n' +
+    '10:00 - 12:00 message: A\n' +
+    '12:00 - 13:00 message: B\n' +
     '\n' +
-    '14:00 - 15:54 top side was C\n' +
-    '15:54 - 16:00 top side was D\n'
+    '14:00 - 15:54 message: C\n' +
+    '15:54 - 16:00 message: D\n'
   )
+
+  describe('change the top side definition while running the program', () => {
+    const updateTopSideMessagesFile = (topSideDefinitionPath) => {
+      const currentTopSides = JSON.parse(fs.readFileSync(topSideDefinitionPath, 'utf8'))
+      const newTopSides = []
+      currentTopSides.forEach(topSide => {
+        if (topSide.message) {
+          topSide.message += '_new'
+        }
+        newTopSides.push(topSide)
+      })
+      fs.writeFileSync(topSideDefinitionPath, JSON.stringify(newTopSides, undefined, 2))
+    }
+
+    it('change top side definition file while logging to timesheet', () => {
+      const timesheetPath = tmp.fileSync().name
+      const topSideDefinitionPath = _createTemporaryFileWithTopSideDefinition()
+      const changesOfTimeularZei = [
+        {moment: moment().hour(8).minute(0), sticker: topSidesReverseMapping['MAIL']},
+        {moment: moment().hour(9).minute(0), sticker: topSidesReverseMapping['CLOCK']},
+        {moment: moment().hour(9).minute(22), sticker: topSidesReverseMapping['GEAR']},
+        {moment: moment().hour(9).minute(53), sticker: topSidesReverseMapping['CHAT']}
+      ]
+      const timesheetLoggerWithMomentStub = _createTimesheetLoggerWithMomentStub(changesOfTimeularZei)
+      const logChangesToTimesheetCallback = timesheetLoggerWithMomentStub.logChangesToTimesheetCallback(timesheetPath, topSideDefinitionPath)
+      changesOfTimeularZei.forEach(changeOfTimeularZei => {
+        logChangesToTimesheetCallback(_createTopSideDataBuffer(changeOfTimeularZei.sticker))
+        updateTopSideMessagesFile(topSideDefinitionPath)
+      })
+
+      const actualConent = fs.readFileSync(timesheetPath).toString()
+
+      const expectedContent = '08:00 - 09:00 message: MAIL_new\n' +
+        '09:00 - 09:24 message: CLOCK_new_new\n' +
+        '09:24 - 09:54 message: GEAR_new_new_new\n'
+      actualConent.should.equal(expectedContent)
+    })
+  })
 })
