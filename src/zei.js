@@ -8,19 +8,8 @@ const TOP_SIDE_CHARACTERISTIC_UUID = zeiServices.ORIENTATION.characteristics.TOP
 const RELEVANT_CHARACTERISTICS = [TOP_SIDE_CHARACTERISTIC_UUID]
 
 const subscribeToCharacteristics = orientationChangeCallback => {
-  _startScanning()
   _registerToZeiEvents(orientationChangeCallback)
-}
-
-const _startScanning = () => {
-  noble.on('stateChange', state => {
-    if (state === 'poweredOn') {
-      log.debug('Starting to scan for a Timeular Zei.')
-      // todo Only scanning for dedicated services does not work.
-      // noble.startScanning(RELEVANT_SERVICES)
-      noble.startScanning()
-    }
-  })
+  _startScanning()
 }
 
 const _registerToZeiEvents = orientationChangeEventCallback => {
@@ -61,7 +50,15 @@ const _stopScanningAndConnect = (peripheral, connectionEstablishedCallback) => {
           connectionEstablishedCallback(characteristics)
         }
       )
+      _reconnectToZeiAfterDisconnect(peripheral)
     })
+  })
+}
+
+const _reconnectToZeiAfterDisconnect = peripheral => {
+  peripheral.once('disconnect', () => {
+    log.debug(`Lost connection to Timeular Zei with the Mac address ${peripheral.address}. Trying to reconnect.`)
+    noble.startScanning()
   })
 }
 
@@ -74,6 +71,17 @@ const _subscribeToNotifyEvent = (characteristics, uuid, eventCallback) => {
   )
   notifyCharacteristic.on('data', eventCallback)
   notifyCharacteristic.subscribe()
+}
+
+const _startScanning = () => {
+  noble.on('stateChange', state => {
+    if (state === 'poweredOn') {
+      log.debug('Starting to scan for a Timeular Zei.')
+      // todo Only scanning for dedicated services does not work.
+      // noble.startScanning(RELEVANT_SERVICES)
+      noble.startScanning()
+    }
+  })
 }
 
 module.exports = {
