@@ -1,9 +1,12 @@
 version: '3'
 services:
   npm:
-    build: .
-    privileged: true
-    net: 'host'
+    build:
+      context: .
+    network_mode: 'host'
+    environment:
+      # application-specific environment variables
+      TIMESHEET_DIR:
     volumes:
       - .:/project
     working_dir: /project
