@@ -26,6 +26,7 @@ getcap $(readlink --canonicalize `which node`)
 ## Usage with Docker
 
 ```bash
+docker-compose up --build --force-recreate --no-start
 docker-compose run --rm --user ${UID} npm install
 docker-compose run --rm --user ${UID} npm test
 docker-compose run --rm --user ${UID} npm start
