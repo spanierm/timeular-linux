@@ -9,6 +9,8 @@ services:
       TIMESHEET_DIR:
     volumes:
       - .:/project
+      # application-specific volumes
+      - /etc/localtime:/etc/localtime
       - ${TIMESHEET_DIR}:${TIMESHEET_DIR}
     working_dir: /project
     entrypoint: npm
